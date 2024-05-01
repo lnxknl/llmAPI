@@ -11,11 +11,14 @@ import retrofit2.Callback
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import okhttp3.OkHttpClient
+import java.util.concurrent.TimeUnit
+
 
 class MainActivity : AppCompatActivity() {
 
-    private val apiKey = "YOUR_API_KEY_HERE"
-    private val baseUrl = "https://api.openweathermap.org/data/2.5/"
+    private val apiKey = ""
+    private val baseUrl = ""
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -26,9 +29,14 @@ class MainActivity : AppCompatActivity() {
         val retrofit = Retrofit.Builder()
             .baseUrl(baseUrl)
             .addConverterFactory(GsonConverterFactory.create())
+    .callFactory(OkHttpClient.Builder()
+        .readTimeout(360, TimeUnit.SECONDS)
+        .connectTimeout(360, TimeUnit.SECONDS)
+        .build())
             .build()
 
         val weatherApi = retrofit.create(WeatherApi::class.java)
+//        println(weatherApi)
 
         // Handle button click to fetch weather data
         val fetchButton = findViewById<Button>(R.id.fetchButton)
@@ -39,7 +47,11 @@ class MainActivity : AppCompatActivity() {
             val city = cityEditText.text.toString()
             if (city.isNotEmpty()) {
                 // Make the API call
-                val call = weatherApi.getWeather(city, apiKey)
+val payload = mapOf(
+    "apiKey" to apiKey,
+    "prompt" to city
+)
+                val call = weatherApi.getWeather(payload)
 
                 call.enqueue(object : Callback<WeatherResponse> {
                     override fun onResponse(
@@ -48,10 +60,12 @@ class MainActivity : AppCompatActivity() {
                     ) {
                         if (response.isSuccessful) {
                             val weatherData = response.body()
-                            val temperatureKelvin = weatherData?.main?.temp
-                            val temperatureCelsius =
-                                temperatureKelvin?.minus(273.15) // Convert Kelvin to Celsius
-                            resultTextView.text = "Temperature: $temperatureCelsius°C"
+//                            val weatherData =  response.body()?.string()
+                            val temperatureCelsius = weatherData?.output
+//                            val temperatureCelsius = weatherData?.response
+//                            val temperatureCelsius =
+//                                temperatureKelvin?.minus(273.15) // Convert Kelvin to Celsius
+                            resultTextView.text = "echo: $temperatureCelsius"
                         } else {
                             resultTextView.text = "Error: ${response.code()}"
                         }
